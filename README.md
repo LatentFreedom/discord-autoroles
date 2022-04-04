@@ -29,18 +29,19 @@ CHANNEL_ID=
     "roles": [
         {
             "role" : "roleName1",
-            "role_id" : 000000000000000000,
+            "description" : "**roleName1** notifications",
+            "custom_emoji" : true,
             "image" : "role1.jpeg"
         },
         {
             "role" : "roleName2",
-            "role_id" : 000000000000000001,
-            "image" : "role2.png"
+            "description" : "**roleName2** notifications",
+            "custom_emoji" : false,
+            "image" : "🎮"
         }
     ]
 }
 ```
 
 ## Discord / Commands
-1. **setrole:** Set a new role that can be acquired
-2. **delrole:** Del a role from the server
+1. **reactionrole:** Send message where reactions will be processed for roles
