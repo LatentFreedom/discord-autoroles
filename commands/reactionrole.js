@@ -6,6 +6,57 @@ const getJsonData = () => {
     return JSON.parse(rawdata);
 }
 
+const saveJsonData = (data) => {
+    json = JSON.stringify(data, null, 4);
+    fs.writeFile('./roles.json', json, (err) => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("Roles data saved successfully");
+        }
+    });
+}
+
+const sendCategoryEmbed = async (category, message) => {
+    // Create message description that includes emojis with role
+    let description = "";
+    // Loop through roles and build message
+    for (let i = 0; i < category.roles.length; i++) {
+        const savedRole = category.roles[i];
+        // Check for custom emoji
+        if (savedRole.custom_emoji) {
+            // Get the custom emoji data
+            const emoji = message.guild.emojis.cache.find(emoji => emoji.name === savedRole.name);
+            savedRole.emoji = emoji;
+        } else {
+            // Non custom emoji images are the emoji
+            savedRole.emoji = savedRole.image;
+            
+        }
+        const r = message.guild.roles.cache.find(role => role.name === savedRole.name);
+        savedRole.role = r;
+        description += `${savedRole.emoji} for ${savedRole.description}\n`;
+        
+    }
+
+    const embed = new MessageEmbed()
+        .setTitle(`${category.title} roles`)
+        .setDescription(`${category.description}\n\n` + description);
+
+    // Send message
+    let messageEmbed = await message.channel.send({embeds: [embed]});
+
+    // Set embedId
+    // NOTE: embed will not be posted twice when embedId is set
+    category.embedId = messageEmbed.id;
+
+    // Send reactions
+    for (let i = 0; i < category.roles.length; i++) {
+        const role = category.roles[i];
+        await messageEmbed.react(role.emoji);
+    }
+}
+
 module.exports = {
 	name : 'reactionrole',
     description : 'Set up a reaction role message',
@@ -14,36 +65,26 @@ module.exports = {
         // get saved role data
         const savedData = getJsonData();
 
-        // Create message description that includes emojis with role
-        let description = "";
-        for (let i = 0; i < savedData.roles.length; i++) {
-            const savedRole = savedData.roles[i];
-            // console.log(role);
-            if (savedRole.custom_emoji) {
-                const emoji = message.guild.emojis.cache.find(emoji => emoji.name === savedRole.name);
-                savedRole.emoji = emoji;
-            } else {
-                savedRole.emoji = savedRole.image;
-                
+        // Check if channel already has role messages
+        const channel = client.channels.cache.get(savedData.channel);
+        const messageIds = [];
+        await channel.messages.fetch({ limit: 10 }).then(messages => {
+            console.log(`Received ${messages.size} messages`);
+            // Iterate through the messages here with the variable "messages".
+            messages.forEach(message => {
+                messageIds.push(message.id);
+            });
+        });
+
+        console.log(messageIds);
+        
+        for (const category of savedData.categories) {
+            // Check if message already posted
+            if (messageIds.includes(category.embedId)) {
+                console.log(`Message already posted.`);
+                continue;
             }
-            const r = message.guild.roles.cache.find(role => role.name === savedRole.name);
-            savedRole.role = r;
-            client.roles.set(savedRole.name, savedRole);
-            description += `${savedRole.emoji} for ${savedRole.description}\n`;
-            
-        }
-
-        const embed = new MessageEmbed()
-            .setTitle(`${savedData.title} roles`)
-            .setDescription(`${savedData.description}\n\n` + description);
-       
-        // Send message
-        let messageEmbed = await message.channel.send({embeds: [embed]});
-
-        // Send reactions
-        for (let i = 0; i < savedData.roles.length; i++) {
-            const role = savedData.roles[i];
-            await messageEmbed.react(role.emoji);
+            await sendCategoryEmbed(category, message);
         }
 
         client.on('messageReactionAdd', async (reaction, user) => {
@@ -52,22 +93,25 @@ module.exports = {
             if (!reaction.message.guild) return;
             if (reaction.message.channel.id == savedData.channel) {
 
-                let role = client.roles.get(reaction.emoji.name);
-
-                if (role === undefined) {
-                    for (const [name,r] of client.roles) {
-                        if (r.custom_emoji) {
-                            continue;
-                        }
-                        if (reaction.emoji.name == r.image) {
-                            role = r;
+                let role = undefined;
+                // Find role given reaction emoji name
+                for (let i = 0; i < savedData.categories.length; i++) {
+                    const category = savedData.categories[i];
+                    // Loop through category roles
+                    for (let ii = 0; ii < category.roles.length; ii++) {
+                        const r = category.roles[ii];
+                        if (r.name == reaction.emoji.name || r.emoji == reaction.emoji.name) {
+                            role = message.guild.roles.cache.find(role => role.name === r.name);
                             break;
                         }
                     }
+                    if (role !== undefined) {
+                        break;
+                    }
                 }
 
-                if (reaction.emoji.name === role.name || reaction.emoji.name === role.emoji) {
-                    await reaction.message.guild.members.cache.get(user.id).roles.add(role.role.id);
+                if (role !== undefined) {
+                    await reaction.message.guild.members.cache.get(user.id).roles.add(role.id);
                 }
 
             } else {
@@ -76,32 +120,38 @@ module.exports = {
         });
 
         client.on('messageReactionRemove', async (reaction, user) => {
+
             if (user.bot) return;
             if (!reaction.message.guild) return;
             if (reaction.message.channel.id == savedData.channel) {
                 
-                let role = client.roles.get(reaction.emoji.name);
-
-                if (role === undefined) {
-                    for (const [name,r] of client.roles) {
-                        if (r.custom_emoji) {
-                            continue;
-                        }
-                        if (reaction.emoji.name == r.image) {
-                            role = r;
+                let role = undefined;
+                // Find role given reaction emoji name
+                for (let i = 0; i < savedData.categories.length; i++) {
+                    const category = savedData.categories[i];
+                    // Loop through category roles
+                    for (let ii = 0; ii < category.roles.length; ii++) {
+                        const r = category.roles[ii];
+                        if (r.name == reaction.emoji.name || r.emoji == reaction.emoji.name) {
+                            role = message.guild.roles.cache.find(role => role.name === r.name);
                             break;
                         }
                     }
+                    if (role !== undefined) {
+                        break;
+                    }
                 }
 
-                if (reaction.emoji.name === role.name || reaction.emoji.name === role.emoji) {
-                    await reaction.message.guild.members.cache.get(user.id).roles.remove(role.role.id);
+                if (role !== undefined) {
+                    await reaction.message.guild.members.cache.get(user.id).roles.remove(role.id);
                 }
 
             } else {
                 return;
             }
         });
+
+        saveJsonData(savedData);
 
 	},
 };
