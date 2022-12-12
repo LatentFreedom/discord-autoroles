@@ -1,40 +1,46 @@
-const { Client, Collection, Intents, Message } = require('discord.js');
-require('dotenv').config();
-const fs = require('fs');
+import { Client, Collection, Intents } from 'discord.js'
+import { config } from 'dotenv'
+import fs  from 'fs'
+
+config({ path: './.env' })
+
 
 const client = new Client({
     intents : [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS]
-});
+})
 
-client.commands = new Collection();
+client.commands = new Collection()
 
-const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'))
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.name, command);
+    const command = await import(`./commands/${file}`)
+    client.commands.set(command.command.name, command.command)
 }
 
 client.on('ready', () => {
-    console.log('Auto Roles Running...');
-});
-
-const prefix = '-';
+    console.log('Auto Roles Running...')
+})
 
 client.on('messageCreate', async (message) => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
+	const prefix = '-'
 
-	const args = message.content.slice(prefix.length).split(/ +/);
-    const commandText = args.shift().toLowerCase();
-    const command = client.commands.get(commandText);
+	// Check if message came from a bot
+	if (message.author.bot) return
 
-	if (!command) return;
+	// Check for command prefixes
+    if (!message.content.startsWith(prefix)) return
+
+	const args = message.content.slice(prefix.length).split(/ +/)
+    const commandText = args.shift().toLowerCase()
+    const command = client.commands.get(commandText)
+	if (!command) return
 
 	try {
-		await command.execute(message, args, client);
+		await command.execute(message, args, client)
 	} catch (error) {
-		console.error(error);
-		await message.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		console.error(error)
+		await message.reply({ content: 'There was an error while executing this command!', ephemeral: true })
 	}
 })
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN)

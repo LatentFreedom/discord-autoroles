@@ -23,34 +23,5 @@ GUILD_ID=
 CHANNEL_ID=
 ```
 
-## Values in `roles.json`
-```
-{
-    "channel" : "0",
-    "categories" : [
-        {
-            "title" : "title1",
-            "description" : "description1",
-            "embedId" : "",
-            "roles": [
-                {
-                    "role" : "roleName1",
-                    "description" : "**roleName1** notifications",
-                    "custom_emoji" : true,
-                    "image" : "role1.jpeg"
-                },
-                {
-                    "role" : "roleName2",
-                    "description" : "**roleName2** notifications",
-                    "custom_emoji" : false,
-                    "image" : "🎮",
-                    "emoji" : ":video_game:"
-                }
-            ]
-        }
-    ]
-}
-```
-
 ## Discord -Commands
 1. **-reactionrole:** Send message where reactions will be processed for roles
