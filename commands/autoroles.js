@@ -1,4 +1,4 @@
-import { MessageEmbed } from 'discord.js'
+import { EmbedBuilder } from 'discord.js'
 
 import { getJsonData, saveJsonData } from '../utils/helpers.js'
 
@@ -83,7 +83,7 @@ const sendCategoryEmbed = async (category, message) => {
         
     }
 
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle(`${category.title} roles`)
         .setDescription(`${category.description}\n\n` + description)
 
@@ -123,7 +123,7 @@ const editCategoryEmbed = async (category, message) => {
         
     }
 
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle(`${category.title} roles`)
         .setDescription(`${category.description}\n\n` + description)
 
@@ -175,9 +175,10 @@ const command = {
 
             if (user.bot) return
             if (!reaction.message.guild) return
-            if (reaction.message.channel.id == savedData.channel) {
 
-                await client.user.setActivity(`Updating user roles`)
+            await client.user.setActivity(`with roles`)
+
+            if (reaction.message.channel.id == savedData.channel) {
 
                 let role = undefined
                 // Find role given reaction emoji name
@@ -200,8 +201,6 @@ const command = {
                     await reaction.message.guild.members.cache.get(user.id).roles.add(role.id)
                 }
 
-            } else {
-                return
             }
 
             await client.user.setActivity(`in the Metaverse`)
@@ -212,9 +211,10 @@ const command = {
 
             if (user.bot) return
             if (!reaction.message.guild) return
-            if (reaction.message.channel.id == savedData.channel) {
 
-                await client.user.setActivity(`Updating user roles`)
+            client.user.setActivity(`with roles`)
+
+            if (reaction.message.channel.id == savedData.channel) {
                 
                 let role = undefined
                 // Find role given reaction emoji name
@@ -237,11 +237,9 @@ const command = {
                     await reaction.message.guild.members.cache.get(user.id).roles.remove(role.id)
                 }
 
-            } else {
-                return
             }
 
-            await client.user.setActivity(`in the Metaverse`)
+            client.user.setActivity(`in the Metaverse`)
 
         })
 
