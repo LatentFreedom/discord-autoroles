@@ -1,4 +1,4 @@
-import { Client, Collection, Intents } from 'discord.js'
+import { Client, Collection, GatewayIntentBits } from 'discord.js'
 import { config } from 'dotenv'
 import fs  from 'fs'
 
@@ -6,7 +6,13 @@ config({ path: './.env' })
 
 
 const client = new Client({
-    intents : [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS]
+    intents : [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.GuildMessageReactions,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.MessageContent
+	]
 })
 
 client.commands = new Collection()
@@ -19,10 +25,11 @@ for (const file of commandFiles) {
 
 client.on('ready', () => {
     console.log('Auto Roles Running...')
+	client.user.setActivity(`in the Metaverse`)
 })
 
 client.on('messageCreate', async (message) => {
-	const prefix = '-'
+	const prefix = '>'
 
 	// Check if message came from a bot
 	if (message.author.bot) return
